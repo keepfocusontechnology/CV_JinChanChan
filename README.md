@@ -20,5 +20,7 @@
 
 ![](https://raw.githubusercontent.com/jusway/CV_JinChanChan/refs/heads/main/img/%E5%8C%B9%E9%85%8D%E7%95%8C%E9%9D%A2.png)
 
+![](https://raw.githubusercontent.com/jusway/CV_JinChanChan/refs/heads/main/img/%E6%8B%BF%E7%89%8C.png)
+
 
 
