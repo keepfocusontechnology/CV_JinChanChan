@@ -10,7 +10,11 @@
 
 剔除所追牌
 
-
-
 可自己配置阵容
+
+# 选阵容界面
+
+![哈哈哈](https://raw.githubusercontent.com/jusway/CV_JinChanChan/refs/heads/main/img/%E9%80%89%E9%98%B5%E5%AE%B9%E7%95%8C%E9%9D%A2.png)
+
+
 
