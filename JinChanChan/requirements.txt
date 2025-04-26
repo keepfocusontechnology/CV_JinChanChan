@@ -1,2 +1,3 @@
 dxcam
 pillow
+numpy<2

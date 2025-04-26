@@ -24,3 +24,8 @@
 
 
 
+# 安装包
+
+通过网盘分享的文件：安装包
+链接: https://pan.baidu.com/s/1eD7vM2fdk7nj4q4XyrRFnQ?pwd=cm6x 提取码: cm6x 
+--来自百度网盘超级会员v3的分享
