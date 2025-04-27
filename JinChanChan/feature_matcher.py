@@ -23,6 +23,8 @@ class FeatureMatcher:
         ])
 
     def extract_features(self, img):
+        # 图像增强预处理
+        img = img.convert('L').convert('RGB')  # 先转灰度再转RGB增强边缘
         # 图像读取与预处理
         img_tensor = self.preprocess(img).unsqueeze(0).to(self.device)
         # 特征提取
@@ -58,12 +60,6 @@ if __name__ == '__main__':
         img_features[k] = matcher.extract_features(v)
 
     # 执行查询
-    img = Image.open(r'D:\D_disk\DATA\project\python_project\CV\JinChanChan_github\JinChanChan\pictures\嘉文四世.png')
+    img = Image.open('JinChanChan/pictures/嘉文四世.png')
     best_name,best_score=matcher.match_images(img, img_features)
     print(f"最佳匹配：{best_name}，相似度：{best_score}")
-
-
-
-
-
-

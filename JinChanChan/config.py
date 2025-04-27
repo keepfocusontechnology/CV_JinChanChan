@@ -1,6 +1,6 @@
 
 class Config:
-    pictrue_dir=r'D:\D_disk\DATA\project\python_project\CV\JinChanChan_github\JinChanChan\pictures'
+    pictrue_dir='JinChanChan/pictures'
     output_idx=1
     point= -1392,897
     h=167
