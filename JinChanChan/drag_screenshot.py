@@ -47,6 +47,19 @@ class DragScreenshot:
         
         return screenshot_path, (left, top, width, height)
 
+    def capture_fixed_area(self):
+        """截取固定区域: 左上(871, 989), 宽1014, 高161"""
+        left, top = 871, 989
+        width, height = 1014, 161
+        
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        screenshot_path = f"{self.screenshot_dir}/fixed_{timestamp}.png"
+        screenshot = pyautogui.screenshot(region=(left, top, width, height))
+        screenshot.save(screenshot_path)
+        
+        print(f"固定区域截图已保存到: {screenshot_path}")
+        return screenshot_path, (left, top, width, height)
+
 def main():
     ds = DragScreenshot()
     print("按F3键开始截图，按ESC退出")
