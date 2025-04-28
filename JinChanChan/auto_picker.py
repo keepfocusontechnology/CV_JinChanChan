@@ -71,14 +71,18 @@ def main():
     card_splitter = CardSplitter()
     
     # 牌组A - 需要匹配的目标英雄
-    target_heroes = ["蔚", "乐芙兰", "德莱文","加里奥","劫"]
+    target_heroes = ["加里奥","劫","妮蔻","吉格斯"]
     logger.info(f"目标英雄牌组: {target_heroes}")
     
     logger.info("按F3键开始循环，按ESC键退出程序")
     
+    global should_exit
+    should_exit = False
+    
     def on_esc():
+        global should_exit
         logger.info("ESC键被按下，退出程序")
-        os._exit(0)
+        should_exit = True
         
     def on_f3():
         logger.info("F3键被按下，开始执行...")
@@ -88,6 +92,11 @@ def main():
     keyboard.add_hotkey('f3', on_f3)
     
     def main_loop():
+            global should_exit
+            if should_exit:
+                logger.info("正在退出程序...")
+                return
+                
             logger.info("开始新一轮操作...")
             
             # 截取固定区域并分割为5张牌
@@ -141,7 +150,7 @@ def main():
             keyboard.press('d')
             time.sleep(0.1)
             keyboard.release('d')
-            time.sleep(1.5)  # 等待刷新完成
+            time.sleep(0.3)  # 等待刷新完成
             
             # 递归调用重新开始完整流程
             logger.info("重新开始完整流程...")
