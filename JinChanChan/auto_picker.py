@@ -13,6 +13,7 @@ from card_splitter import CardSplitter
 import time
 import keyboard
 import logging
+from utils import LogAnalyzer, setup_unified_logging
 
 # 配置日志
 logging.basicConfig(
@@ -25,7 +26,9 @@ logging.basicConfig(
 )
 class AutoPicker:
     def __init__(self):
+        setup_unified_logging()
         self.logger = logging.getLogger(__name__)
+        self.log_analyzer = LogAnalyzer()
         self.should_exit = False
         self.target_heroes = ["加里奥","劫","妮蔻","吉格斯"]
         
@@ -85,9 +88,10 @@ class AutoPicker:
         try:
             self._core_operation()
         except Exception as e:
-            self.logger.exception("核心操作异常，5秒后重试")
+            error_type = self.log_analyzer.analyze(str(e))
+            if error_type:
+                self.log_analyzer.execute_recovery(error_type, self)
             time.sleep(5)
-            self._reinitialize_components()
 
     def _core_operation(self):
         
