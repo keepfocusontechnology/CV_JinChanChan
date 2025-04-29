@@ -52,12 +52,14 @@ class DragScreenshot:
         left, top = 871, 989
         width, height = 1014, 161
         
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
-        screenshot_path = f"{self.screenshot_dir}/fixed_{timestamp}.png"
+        screenshot_path = f"{self.screenshot_dir}/current_screenshot.png"
+        if os.path.exists(screenshot_path):
+            os.remove(screenshot_path)
+        
         screenshot = pyautogui.screenshot(region=(left, top, width, height))
         screenshot.save(screenshot_path)
         
-        print(f"固定区域截图已保存到: {screenshot_path}")
+        print(f"截图已更新到: {screenshot_path}")
         return screenshot_path, (left, top, width, height)
 
 def main():

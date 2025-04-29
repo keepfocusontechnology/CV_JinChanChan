@@ -17,7 +17,7 @@ from utils import LogAnalyzer, setup_unified_logging
 
 # 配置日志
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
@@ -30,7 +30,9 @@ class AutoPicker:
         self.logger = logging.getLogger(__name__)
         self.log_analyzer = LogAnalyzer()
         self.should_exit = False
-        self.target_heroes = ["加里奥","劫","妮蔻","吉格斯"]
+        self.target_heroes = []  # 初始为空，由GUI界面设置
+        self.max_d_count = 20    # 默认D牌次数
+        self.current_d_count = 0 # 当前已D次数
         
         # 初始化硬件加速器
         try:
@@ -44,24 +46,29 @@ class AutoPicker:
         self.card_splitter = CardSplitter()
 
     def setup_mumu_window(self):
+        """设置MuMu窗口位置和大小"""
         try:
             mumu_window = gw.getWindowsWithTitle("MuMu模拟器12")[0]
-            screen_width, screen_height = pyautogui.size()
-            center_x = (screen_width - 1600) // 2
-            center_y = (screen_height - 900) // 2
-            
-            mumu_window.resizeTo(1600, 900)
-            mumu_window.moveTo(center_x, center_y)
-            mumu_window.minimize()
-            mumu_window.restore()
-            mumu_window.activate()
-            time.sleep(0.5)
-            self.logger.info(f"已设置MuMu窗口位置: ({center_x},{center_y})")
+            self._position_mumu_window(mumu_window)
         except Exception as e:
             self.logger.error(f"窗口设置失败: {e}", exc_info=True)
         # 初始化MuMu窗口时添加窗口列表日志
         available_windows = [win.title for win in gw.getAllWindows()]
         self.logger.info(f"可用窗口列表: {available_windows}")
+
+    def _position_mumu_window(self, window):
+        """设置窗口位置和大小的核心逻辑"""
+        screen_width, screen_height = pyautogui.size()
+        center_x = (screen_width - 1600) // 2
+        center_y = (screen_height - 900) // 2
+        
+        window.resizeTo(1600, 900)
+        window.moveTo(center_x, center_y)
+        window.minimize()
+        window.restore()
+        window.activate()
+        time.sleep(0.5)
+        self.logger.info(f"已设置MuMu窗口位置: ({center_x},{center_y})")
 
     def register_hotkeys(self):
         keyboard.add_hotkey('esc', self.on_esc)
@@ -77,11 +84,25 @@ class AutoPicker:
         self._run_loop()
 
     def stop_picking(self):
-        self.running_flag = False
         self.should_exit = True
+        self.running_flag = False
+        try:
+            # 强制终止所有键盘操作
+            keyboard.unhook_all()
+            # 确保所有按键被释放
+            keyboard.release('d')
+            # 重置D牌计数
+            self.current_d_count = 0
+            self.logger.info("已强制停止D牌操作")
+        except Exception as e:
+            self.logger.error(f"停止时出错: {str(e)}")
+        finally:
+            # 确保状态被重置
+            self.should_exit = True
+            self.running_flag = False
 
     def _run_loop(self):
-        while self.running_flag:
+        while self.running_flag and not self.should_exit:
             self.main_loop()
             time.sleep(0.1)
 
@@ -102,77 +123,68 @@ class AutoPicker:
             time.sleep(5)
 
     def _core_operation(self):
-        
-        # 核心操作流程（带重试机制）
-        for attempt in range(3):
-            try:
-                self.screenshot_tool.capture_fixed_area()
-                break
-            except Exception as e:
-                self.logger.warning(f"截图失败，第{attempt+1}次重试")
-                if attempt == 2:
-                    raise
-                time.sleep(1)
-
-        self.card_splitter.split_and_save()
-        
-        matches = self.card_matcher.match_all_cards()
-        
-        # 复制牌组B用于修改
-        remaining_cards = matches.copy()
-        any_matched = False
-        
-        # 优先检查特殊卡"细胞组织"
-        for i, card in enumerate(remaining_cards):
-            if card['hero'] == "细胞组织":
-                self.logger.info("找到特殊卡牌: 细胞组织")
-                pyautogui.moveTo(card['center_x'], card['center_y'], duration=0.3)
-                time.sleep(0.05)
-                pyautogui.click()
-                self.logger.info("已点击特殊卡牌")
-                remaining_cards.pop(i)
-                return
-        
-        while True:
-            any_matched = False
-            # 每次从牌组A的第一张牌开始匹配
-            for hero in self.target_heroes:
-                # 在剩余牌组B中查找匹配
-                for i, card in enumerate(remaining_cards):
-                    if card['hero'] == hero:
-                        logger.info(f"找到目标英雄 {hero} 在卡牌{card['card']}")
-                        
-                        # 移动鼠标到卡牌中心位置
-                        logger.info(f"正在移动鼠标到卡牌位置: ({card['center_x']}, {card['center_y']})")
-                        pyautogui.moveTo(card['center_x'], card['center_y'], duration=0.3)
-                        time.sleep(0.05)  # 50ms延迟
-                        
-                        # 点击卡牌
-                        pyautogui.click()
-                        logger.info(f"已点击卡牌 {card['card']}")
-                        
-                        # 从牌组B中移除已点击的卡牌
-                        remaining_cards.pop(i)
-                        any_matched = True
-                        break  # 点击后跳出当前循环，重新从牌组A开始匹配
-            
-            if any_matched:
-                break  # 点击后跳出英雄循环，重新开始匹配
-        
-            # 如果没有匹配或牌组B为空，则跳出循环
-            if not any_matched or not remaining_cards:
-                break
-        
-            logger.info("牌组A未匹配到牌组B或牌组B已空，触发D键刷新卡牌...")
-            keyboard.press('d')
-            time.sleep(0.1)
-            keyboard.release('d')
-            time.sleep(0.3)  # 等待刷新完成
-            
-            # 递归调用改为循环控制
-            self.logger.info("重新开始完整流程...")
-            main_loop()
+        if self.should_exit:
             return
+            
+        try:
+            # 1. 截图
+            for attempt in range(3):
+                try:
+                    self.screenshot_tool.capture_fixed_area()
+                    break
+                except Exception as e:
+                    self.logger.warning(f"截图失败，第{attempt+1}次重试")
+                    if attempt == 2:
+                        raise
+                    time.sleep(1)
+
+            # 2. 分割卡牌
+            self.card_splitter.split_and_save()
+            
+            # 3. 匹配卡牌
+            matches = self.card_matcher.match_all_cards()
+            if not matches:
+                self.logger.warning("未识别到任何卡牌")
+                return
+                
+            # 4. 优先检查特殊卡"细胞组织"
+            for i, card in enumerate(matches):
+                if card['hero'] == "细胞组织":
+                    self.logger.info("找到特殊卡牌: 细胞组织")
+                    pyautogui.moveTo(card['center_x'], card['center_y'], duration=0.2)
+                    time.sleep(0.05)
+                    pyautogui.click()
+                    self.logger.info("已点击特殊卡牌")
+                    return
+                    
+            # 5. 匹配目标英雄
+            for hero in self.target_heroes:
+                for card in matches:
+                    if card['hero'] == hero:
+                        self.logger.info(f"找到目标英雄 {hero}")
+                        pyautogui.moveTo(card['center_x'], card['center_y'], duration=0.2)
+                        time.sleep(0.05)
+                        pyautogui.click()
+                        self.logger.info(f"已点击英雄 {hero}")
+                        return
+                        
+            # 6. 没有匹配则刷新
+            if self.current_d_count >= self.max_d_count:
+                self.logger.info(f"已达到最大D牌次数 {self.max_d_count}，停止操作")
+                self.stop_picking()
+                return
+                
+            self.current_d_count += 1
+            remaining = self.max_d_count - self.current_d_count
+            self.logger.info(f"未找到目标英雄，触发D键刷新... (已D {self.current_d_count}次，剩余 {remaining}次)")
+            self.logger.debug("开始模拟按下D键")
+            keyboard.press('d')
+            time.sleep(0.02)
+            keyboard.release('d') 
+            self.logger.debug("已释放D键")
+            time.sleep(0.1)
+        except Exception as e:
+            self.logger.error(f"操作出错: {str(e)}", exc_info=True)
 
     def run(self):
         self.logger.info("程序启动")

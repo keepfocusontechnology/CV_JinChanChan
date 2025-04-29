@@ -134,7 +134,29 @@ class AutoPickerGUI:
         control_frame = ttk.Frame(main_frame)
         control_frame.pack(fill='x', pady=5)
 
-        # 控制按钮
+        # D牌次数控制
+        ttk.Label(control_frame, text="D牌次数:").pack(side='left', padx=(5,0))
+        self.d_count = tk.Spinbox(
+            control_frame,
+            from_=1,
+            to=100,
+            width=5,
+            font=('微软雅黑', 10)
+        )
+        self.d_count.pack(side='left', padx=(0,5))
+        self.d_count.delete(0, tk.END)
+        self.d_count.insert(0, "20")  # 默认20次
+
+        # 恢复窗口按钮
+        self.restore_btn = ttk.Button(
+            control_frame,
+            text="恢复窗口",
+            command=self.restore_mumu_window,
+            style="Secondary.TButton",
+            width=15
+        )
+        self.restore_btn.pack(side='left', padx=5, pady=5)
+
         self.start_btn = ttk.Button(
             control_frame,
             text="开始D牌(F3)",
@@ -248,6 +270,16 @@ class AutoPickerGUI:
             logging.info("已停止D牌")
         except Exception as e:
             logging.error(f"停止失败: {str(e)}", exc_info=True)
+
+    def restore_mumu_window(self):
+        """恢复MuMu窗口位置和大小"""
+        try:
+            import pygetwindow as gw
+            mumu_window = gw.getWindowsWithTitle("MuMu模拟器12")[0]
+            self.picker._position_mumu_window(mumu_window)
+            logging.info("已恢复MuMu窗口位置")
+        except Exception as e:
+            logging.error(f"恢复窗口失败: {str(e)}", exc_info=True)
 
     def run(self):
         self.root.mainloop()
