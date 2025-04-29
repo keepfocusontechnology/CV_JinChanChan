@@ -57,7 +57,7 @@ class AutoPickerGUI:
             self.picker.on_f3()
             logging.info("测试已启动，请操作模拟器界面...")
         except Exception as e:
-            logging.error(f"测试失败: {str(e)}")
+            logging.error(f"测试失败: {str(e)}", exc_info=True)
 
     def run(self):
         self.root.mainloop()
