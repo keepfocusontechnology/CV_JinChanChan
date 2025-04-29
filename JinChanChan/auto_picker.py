@@ -122,6 +122,17 @@ class AutoPicker:
         remaining_cards = matches.copy()
         any_matched = False
         
+        # 优先检查特殊卡"细胞组织"
+        for i, card in enumerate(remaining_cards):
+            if card['hero'] == "细胞组织":
+                self.logger.info("找到特殊卡牌: 细胞组织")
+                pyautogui.moveTo(card['center_x'], card['center_y'], duration=0.3)
+                time.sleep(0.05)
+                pyautogui.click()
+                self.logger.info("已点击特殊卡牌")
+                remaining_cards.pop(i)
+                return
+        
         while True:
             any_matched = False
             # 每次从牌组A的第一张牌开始匹配
