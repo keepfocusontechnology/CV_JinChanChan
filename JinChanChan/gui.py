@@ -1,90 +1,67 @@
 import tkinter as tk
 from tkinter import ttk
+from auto_picker import AutoPicker
+import logging
 
-class GoldHelperApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("金铲铲辅助工具")
-        self.root.geometry("600x800")
+class AutoPickerGUI:
+    def __init__(self):
+        self.picker = AutoPicker()
+        self.root = tk.Tk()
+        self.root.title("金铲铲自动选牌测试界面")
+        self.root.geometry("800x600")
 
-        # 英雄数据
-        self.heroes = {
-            "1费卡": ["英雄1-1", "英雄1-2", "英雄1-3"],
-            "2费卡": ["英雄2-1", "英雄2-2", "英雄2-3"],
-            "3费卡": ["英雄3-1", "英雄3-2", "英雄3-3"],
-            "4费卡": ["英雄4-1", "英雄4-2", "英雄4-3"],
-            "5费卡": ["英雄5-1", "英雄5-2", "英雄5-3"],
-            "特殊牌": ["扎克肉肉"]
-        }
+        # 日志区域
+        self.log_text = tk.Text(self.root, wrap=tk.WORD)
+        self.log_text.pack(expand=True, fill='both', padx=10, pady=10)
 
-        # 英雄选择区
-        self.create_hero_selection()
+        # 控制面板
+        control_frame = ttk.Frame(self.root)
+        control_frame.pack(pady=10)
 
-        # 金币设置区
-        self.create_gold_settings()
-
-        # 操作按钮区
-        self.create_action_buttons()
-
-        # 日志显示区
-        self.create_log_area()
-
-    def create_hero_selection(self):
-        frame = ttk.LabelFrame(self.root, text="英雄选择", padding=10)
-        frame.pack(fill=tk.X, padx=10, pady=5)
-
-        for tier, heroes in self.heroes.items():
-            tier_frame = ttk.LabelFrame(frame, text=tier)
-            tier_frame.pack(fill=tk.X, padx=5, pady=2)
-
-            for col, hero in enumerate(heroes):
-                var = tk.IntVar(value=0)
-                cb = tk.Checkbutton(
-                    tier_frame,
-                    text=hero,
-                    variable=var,
-                    command=lambda h=hero: self.log_click(f"勾选英雄: {h}"),
-                    tristatevalue=0  # 设置部分选中状态的值与未选中状态相同
-                )
-                cb.grid(row=0, column=col, padx=5, sticky=tk.W)
-
-    def create_gold_settings(self):
-        frame = ttk.LabelFrame(self.root, text="金币设置", padding=10)
-        frame.pack(fill=tk.X, padx=10, pady=5)
-
-        ttk.Label(frame, text="金币下限:").pack(side=tk.LEFT)
-        self.gold_entry = ttk.Entry(frame)
-        self.gold_entry.pack(side=tk.LEFT, padx=5)
-        self.gold_entry.bind("<FocusOut>", lambda e: self.log_click(f"设置金币下限: {self.gold_entry.get()}"))
-
-    def create_action_buttons(self):
-        frame = ttk.Frame(self.root)
-        frame.pack(fill=tk.X, padx=10, pady=10)
-
-        self.d_button = ttk.Button(
-            frame,
-            text="自动D牌",
-            command=lambda: self.log_click("点击自动D牌按钮")
+        # 测试按钮
+        self.test_btn = ttk.Button(
+            control_frame,
+            text="开始测试(F3)",
+            command=self.start_test,
+            style="Primary.TButton"
         )
-        self.d_button.pack()
+        self.test_btn.pack(side=tk.LEFT, padx=5)
 
-    def create_log_area(self):
-        frame = ttk.LabelFrame(self.root, text="操作日志", padding=10)
-        frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        # 样式配置
+        self.style = ttk.Style()
+        self.style.configure("Primary.TButton",
+                            foreground="white",
+                            background="#4CAF50",
+                            font=('微软雅黑', 12))
 
-        self.log_text = tk.Text(frame, height=10)
-        self.log_text.pack(fill=tk.BOTH, expand=True)
+        # 日志配置
+        self.setup_logging()
 
-        scrollbar = ttk.Scrollbar(frame, command=self.log_text.yview)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.log_text.config(yscrollcommand=scrollbar.set)
+    def setup_logging(self):
+        class TextHandler(logging.Handler):
+            def __init__(self, text_widget):
+                super().__init__()
+                self.text_widget = text_widget
 
-    def log_click(self, message):
-        self.log_text.insert(tk.END, message + "\n")
-        self.log_text.see(tk.END)
-        print(message)
+            def emit(self, record):
+                msg = self.format(record)
+                self.text_widget.insert(tk.END, msg + '\n')
+                self.text_widget.see(tk.END)
+
+        text_handler = TextHandler(self.log_text)
+        text_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+        logging.getLogger().addHandler(text_handler)
+
+    def start_test(self):
+        try:
+            self.picker.on_f3()
+            logging.info("测试已启动，请操作模拟器界面...")
+        except Exception as e:
+            logging.error(f"测试失败: {str(e)}")
+
+    def run(self):
+        self.root.mainloop()
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = GoldHelperApp(root)
-    root.mainloop()
+    app = AutoPickerGUI()
+    app.run()
