@@ -160,7 +160,7 @@ class AutoPickerGUI:
         self.start_btn = ttk.Button(
             control_frame,
             text="开始D牌(F3)",
-            command=self.start_test,
+            command=self.start_picking,
             style="Primary.TButton",
             width=15
         )
@@ -169,7 +169,7 @@ class AutoPickerGUI:
         self.stop_btn = ttk.Button(
             control_frame,
             text="停止D牌(F4)",
-            command=self.stop_test,
+            command=self.stop_picking,
             style="Danger.TButton",
             width=15
         )
@@ -257,16 +257,24 @@ class AutoPickerGUI:
         text_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
         logging.getLogger().addHandler(text_handler)
 
-    def start_test(self):
+    def start_picking(self):
         try:
-            self.picker.on_f3()
-            logging.info("测试已启动，请操作模拟器界面...")
+            # 获取当前配置参数
+            self.picker.max_d_count = int(self.d_count.get())
+            self.picker.target_heroes = [hero for hero, var in self.hero_vars.items() if var.get()]
+            
+            self.picker.start_picking()
+            self.start_btn.config(state=tk.DISABLED)
+            self.stop_btn.config(state=tk.NORMAL)
+            logging.info("开始自动D牌...")
         except Exception as e:
-            logging.error(f"测试失败: {str(e)}", exc_info=True)
+            logging.error(f"启动失败: {str(e)}", exc_info=True)
 
-    def stop_test(self):
+    def stop_picking(self):
         try:
             self.picker.stop_picking()
+            self.start_btn.config(state=tk.NORMAL)
+            self.stop_btn.config(state=tk.DISABLED)
             logging.info("已停止D牌")
         except Exception as e:
             logging.error(f"停止失败: {str(e)}", exc_info=True)

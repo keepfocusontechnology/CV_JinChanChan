@@ -11,6 +11,7 @@ from config import Config
 from drag_screenshot import DragScreenshot
 from card_splitter import CardSplitter
 import time
+import threading
 import keyboard
 import logging
 from utils import LogAnalyzer, setup_unified_logging
@@ -30,6 +31,8 @@ class AutoPicker:
         self.logger = logging.getLogger(__name__)
         self.log_analyzer = LogAnalyzer()
         self.should_exit = False
+        self.picking_thread = None
+        self.lock = threading.Lock()
         self.target_heroes = []  # 初始为空，由GUI界面设置
         self.max_d_count = 20    # 默认D牌次数
         self.current_d_count = 0 # 当前已D次数
@@ -80,12 +83,15 @@ class AutoPicker:
 
     def start_picking(self):
         self.should_exit = False
-        self.running_flag = True
-        self._run_loop()
+        with self.lock:
+            self.running_flag = True
+        self.picking_thread = threading.Thread(target=self._run_loop, daemon=True)
+        self.picking_thread.start()
 
     def stop_picking(self):
         self.should_exit = True
-        self.running_flag = False
+        with self.lock:
+            self.running_flag = False
         try:
             # 强制终止所有键盘操作
             keyboard.unhook_all()
@@ -99,12 +105,26 @@ class AutoPicker:
         finally:
             # 确保状态被重置
             self.should_exit = True
-            self.running_flag = False
+            with self.lock:
+                self.running_flag = False
+                if self.picking_thread and self.picking_thread.is_alive():
+                    self.picking_thread.join(timeout=1)
 
     def _run_loop(self):
-        while self.running_flag and not self.should_exit:
-            self.main_loop()
-            time.sleep(0.1)
+        with self.lock:
+            run_flag = self.running_flag
+            exit_flag = self.should_exit
+        while run_flag and not exit_flag:
+            try:
+                self.main_loop()
+                time.sleep(0.1)
+            except Exception as e:
+                self.logger.error(f"线程运行异常: {str(e)}")
+                break
+            finally:
+                with self.lock:
+                    run_flag = self.running_flag
+                    exit_flag = self.should_exit
 
     def on_f3(self):
         self.logger.info("开始执行")

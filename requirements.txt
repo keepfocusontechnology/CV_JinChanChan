@@ -2,7 +2,7 @@ dxcam==0.0.5
 pyautogui==0.9.54
 pygetwindow==0.0.9
 pynput==1.7.6
-pillow==10.3.0
+pillow>=10.0.0
 keyboard==0.13.5
-numpy==1.26.4
-torch==2.3.0+cu121 --extra-index-url https://download.pytorch.org/whl/cu121
+numpy>=1.26.4
+torch==2.3.0+cu121 --extra-index-url https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch/ --trusted-host mirrors.tuna.tsinghua.edu.cn
