@@ -12,7 +12,7 @@ class AutoPickerGUI:
         self.stop_event = threading.Event()
         self.root = tk.Tk()
         self.root.title("金铲铲自动选牌")
-        self.root.geometry("800x600")
+        self.root.geometry("600x800")
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
         # 主布局
@@ -31,19 +31,9 @@ class AutoPickerGUI:
         hero_frame = ttk.LabelFrame(left_frame, text="目标英雄选择")
         hero_frame.pack(fill='both', expand=True, pady=5)
         
-        # 英雄费用映射
-        self.hero_cost_map = {
-            "1费": ["波比", "贾克斯", "婕拉", "克格莫", "蒙多", "莫甘娜", "奈德丽", "千钰", 
-                  "萨科", "萨勒芬妮", "塞拉斯", "蔚", "阿利斯塔"],
-            "2费": ["格雷福斯", "烬", "拉亚斯特", "乐芙兰", "纳亚菲利", "斯卡纳", "俄洛伊",
-                  "维迦", "希瓦娜", "艾克", "崔斯特", "德莱厄斯", "薇恩"],
-            "3费": ["费德提克", "古拉加斯", "加里奥", "嘉文四世", "金克斯", "雷恩加尔",
-                  "德莱文", "赛娜", "韦鲁斯", "伊莉丝", "悠米", "布隆", "莫德凯撒"],
-            "4费": ["厄运小姐", "吉格斯", "劫", "科加斯", "瑟庄妮", "蕾欧娜", "妮蔻",
-                  "霞", "泽丽", "安妮", "布兰德", "厄斐琉斯", "薇古丝"],
-            "5费": ["阿萝拉", "厄加特", "佛耶戈", "盖伦", "可酷伯", "雷克顿", "莎弥拉", "扎克"],
-            "特殊卡": ["细胞组织"]
-        }
+        from hero_cost_mapper import HeroCostMapper
+        self.hero_mapper = HeroCostMapper()
+        self.hero_cost_map = self.hero_mapper.get_cost_map()
         
         # 存储所有英雄的选中状态
         self.hero_vars = {}
@@ -67,7 +57,7 @@ class AutoPickerGUI:
             hero_text.pack(side='left', fill='x', expand=True)
             
             # 添加该费用的英雄复选框
-            for hero in self.hero_cost_map[cost]:
+            for hero in self.hero_mapper.get_heroes_by_cost(cost):
                 var = tk.BooleanVar(value=False)  # 默认不选中
                 self.hero_vars[hero] = var
                 
@@ -104,7 +94,7 @@ class AutoPickerGUI:
         )
         special_text.pack(side='left', fill='x', expand=True)
         
-        for hero in self.hero_cost_map["特殊卡"]:
+        for hero in self.hero_mapper.get_heroes_by_cost("特殊卡"):
             var = tk.BooleanVar(value=False)
             self.hero_vars[hero] = var
             cb = tk.Checkbutton(
@@ -124,7 +114,7 @@ class AutoPickerGUI:
             special_text.insert(tk.END, " ")
 
         # 已选英雄显示区域 (固定在右侧)
-        selected_frame = ttk.LabelFrame(top_frame, text="当前已选英雄", width=200)
+        selected_frame = ttk.LabelFrame(top_frame, text="当前已选英雄", width=30)
         selected_frame.pack(side='right', fill='y', padx=5, pady=5)
         
         self.selected_listbox = tk.Listbox(
