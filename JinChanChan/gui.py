@@ -140,7 +140,7 @@ class AutoPickerGUI:
         )
         self.d_count.pack(side='left', padx=(0,5))
         self.d_count.delete(0, tk.END)
-        self.d_count.insert(0, "20")  # 默认20次
+        self.d_count.insert(0, "10")  # 默认20次
 
         # 恢复窗口按钮
         self.restore_btn = ttk.Button(
