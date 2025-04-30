@@ -1,32 +1,6 @@
-# Python cache
+# Python compiled files
+*.pyc
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
 
-# Logs and databases
-*.log
-*.sqlite
-
-# Project specific ignores
-app.log
-auto_picker.log
-hero_features.npy
-JinChanChan/mumu截屏/
-JinChanChan/回收站/
+# Split cards directory
+JinChanChan/split_cards/

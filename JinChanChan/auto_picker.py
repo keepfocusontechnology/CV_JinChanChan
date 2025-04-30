@@ -152,19 +152,19 @@ class AutoPicker:
                 for card in matches:
                     if card['hero'] == hero:
                         self.logger.info(f"找到目标英雄 {hero}")
-                        pyautogui.moveTo(card['center_x'], card['center_y'], duration=0.03)
-                        time.sleep(0.02)  # 减少点击前等待时间
+                        pyautogui.moveTo(card['center_x'], card['center_y'], duration=0.2)
                         pyautogui.click()
                         self.logger.info(f"已点击英雄 {hero}")
+                        time.sleep(0.2)  # 点击后等待一下
                         return
                         
             # 5. 最后检查特殊卡"细胞组织"
             for i, card in enumerate(matches):
                 if card['hero'] == "细胞组织":
                     self.logger.info("找到特殊卡牌: 细胞组织")
-                    pyautogui.moveTo(card['center_x'], card['center_y'], duration=0.03)
-                    time.sleep(0.02)  # 减少点击前等待时间
+                    pyautogui.moveTo(card['center_x'], card['center_y'], duration=0.2)
                     pyautogui.click()
+                    time.sleep(0.1)  # 减少点击前等待时间
                     self.logger.info("已点击特殊卡牌")
                     return
                     
