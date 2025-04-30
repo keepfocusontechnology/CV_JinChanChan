@@ -2,13 +2,18 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from auto_picker import AutoPicker
 import logging
+import threading
+import time
 
 class AutoPickerGUI:
     def __init__(self):
         self.picker = AutoPicker()
+        self.picker_thread = None
+        self.stop_event = threading.Event()
         self.root = tk.Tk()
         self.root.title("金铲铲自动选牌")
         self.root.geometry("800x600")
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
         # 主布局
         main_frame = ttk.Frame(self.root)
@@ -153,25 +158,25 @@ class AutoPickerGUI:
             text="恢复窗口",
             command=self.restore_mumu_window,
             style="Secondary.TButton",
-            width=15
+            width=8
         )
         self.restore_btn.pack(side='left', padx=5, pady=5)
 
         self.start_btn = ttk.Button(
             control_frame,
-            text="开始D牌(F3)",
+            text="开始D牌",
             command=self.start_test,
             style="Primary.TButton",
-            width=15
+            width=8
         )
         self.start_btn.pack(side='left', padx=5, pady=5)
 
         self.stop_btn = ttk.Button(
             control_frame,
-            text="停止D牌(F4)",
+            text="停止D牌",
             command=self.stop_test,
             style="Danger.TButton",
-            width=15
+            width=8
         )
         self.stop_btn.pack(side='left', padx=5, pady=5)
 
@@ -180,7 +185,7 @@ class AutoPickerGUI:
             text="清空所有英雄",
             command=self.clear_all_heroes,
             style="Secondary.TButton",
-            width=15
+            width=12
         )
         self.clear_btn.pack(side='left', padx=5, pady=5)
 
@@ -253,23 +258,109 @@ class AutoPickerGUI:
                 self.text_widget.insert(tk.END, msg + '\n')
                 self.text_widget.see(tk.END)
 
-        text_handler = TextHandler(self.log_text)
-        text_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
-        logging.getLogger().addHandler(text_handler)
+        self.log_text_handler = TextHandler(self.log_text)
+        self.log_text_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+        logging.getLogger().addHandler(self.log_text_handler)
 
     def start_test(self):
+        if self.picker_thread and self.picker_thread.is_alive():
+            logging.warning("D牌线程已在运行中")
+            return
+            
+        # 检查是否有选中英雄
+        if not self.picker.target_heroes:
+            logging.warning("未选中任何英雄，请先选择目标英雄")
+            return
+            
         try:
-            self.picker.on_f3()
-            logging.info("测试已启动，请操作模拟器界面...")
+            # 获取D牌次数
+            d_count = int(self.d_count.get())
+            if d_count <= 0:
+                raise ValueError("D牌次数必须大于0")
+            self.picker.max_d_count = d_count
+            self.picker.current_d_count = 0  # 重置计数
+        except ValueError as e:
+            logging.error(f"无效的D牌次数: {str(e)}")
+            return
+            
+        self.stop_event.clear()
+        self.picker_thread = threading.Thread(
+            target=self._run_picker,
+            daemon=True
+        )
+        self.picker_thread.start()
+        logging.info(f"D牌线程已启动，目标英雄: {', '.join(self.picker.target_heroes)}，最大D牌次数: {self.picker.max_d_count}")
+
+    def _run_picker(self):
+        try:
+            # 检查是否有选中英雄
+            if not self.picker.target_heroes:
+                logging.warning("未选中任何英雄，无法开始D牌")
+                return
+                
+            self.picker.running_flag = True
+            self.picker.should_exit = False
+            
+            while not self.stop_event.is_set():
+                # 每次循环检查是否还有选中英雄
+                if not self.picker.target_heroes:
+                    logging.warning("已清空所有英雄，停止D牌")
+                    break
+                    
+                self.picker.main_loop()
+                time.sleep(0.1)  # 避免CPU占用过高
+                
         except Exception as e:
-            logging.error(f"测试失败: {str(e)}", exc_info=True)
+            logging.error(f"D牌失败: {str(e)}", exc_info=True)
+        finally:
+            self.picker.running_flag = False
+            self.picker.should_exit = True
+            self.stop_event.set()  # 确保停止标志被设置
 
     def stop_test(self):
+        if not self.picker_thread or not self.picker_thread.is_alive():
+            logging.warning("没有正在运行的D牌线程")
+            return
+            
         try:
+            # 设置停止标志
+            self.stop_event.set()
+            self.picker.should_exit = True
+            self.picker.running_flag = False
+            
+            # 停止picker操作
             self.picker.stop_picking()
-            logging.info("已停止D牌")
+            
+            # 重置当前D牌计数
+            self.picker.current_d_count = 0
+            
+            # 尝试正常停止线程
+            self.picker_thread.join(timeout=1.0)
+            
+            if self.picker_thread.is_alive():
+                logging.warning("线程未正常终止，尝试强制结束...")
+                # 确保所有键盘操作被释放
+                try:
+                    keyboard.unhook_all()
+                    keyboard.release('d')
+                except:
+                    pass
+                
+                # 创建新线程来监控并强制终止
+                def force_stop():
+                    time.sleep(1)
+                    if self.picker_thread.is_alive():
+                        logging.error("无法正常停止线程，程序可能需要重启")
+                
+                threading.Thread(target=force_stop, daemon=True).start()
+            else:
+                logging.info("D牌线程已安全停止")
+                
         except Exception as e:
             logging.error(f"停止失败: {str(e)}", exc_info=True)
+            # 无论如何都尝试重置状态
+            self.picker.should_exit = True
+            self.picker.running_flag = False
 
     def restore_mumu_window(self):
         """恢复MuMu窗口位置和大小"""
@@ -281,8 +372,25 @@ class AutoPickerGUI:
         except Exception as e:
             logging.error(f"恢复窗口失败: {str(e)}", exc_info=True)
 
+    def on_close(self):
+        """安全关闭窗口的处理方法"""
+        # 停止所有线程
+        if self.picker_thread and self.picker_thread.is_alive():
+            self.stop_test()
+            
+        # 移除日志处理器
+        for handler in logging.getLogger().handlers[:]:
+            if hasattr(self, 'log_text_handler') and isinstance(handler, type(self.log_text_handler)):
+                logging.getLogger().removeHandler(handler)
+                
+        # 销毁窗口
+        self.root.destroy()
+
     def run(self):
-        self.root.mainloop()
+        try:
+            self.root.mainloop()
+        except Exception as e:
+            logging.error(f"程序异常: {str(e)}", exc_info=True)
 
 if __name__ == "__main__":
     app = AutoPickerGUI()

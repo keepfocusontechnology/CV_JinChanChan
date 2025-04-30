@@ -147,42 +147,50 @@ class AutoPicker:
                 self.logger.warning("未识别到任何卡牌")
                 return
                 
-            # 4. 优先检查特殊卡"细胞组织"
-            for i, card in enumerate(matches):
-                if card['hero'] == "细胞组织":
-                    self.logger.info("找到特殊卡牌: 细胞组织")
-                    pyautogui.moveTo(card['center_x'], card['center_y'], duration=0.2)
-                    time.sleep(0.05)
-                    pyautogui.click()
-                    self.logger.info("已点击特殊卡牌")
-                    return
-                    
-            # 5. 匹配目标英雄
+            # 4. 匹配目标英雄
             for hero in self.target_heroes:
                 for card in matches:
                     if card['hero'] == hero:
                         self.logger.info(f"找到目标英雄 {hero}")
-                        pyautogui.moveTo(card['center_x'], card['center_y'], duration=0.2)
-                        time.sleep(0.05)
+                        pyautogui.moveTo(card['center_x'], card['center_y'], duration=0.03)
+                        time.sleep(0.02)  # 减少点击前等待时间
                         pyautogui.click()
                         self.logger.info(f"已点击英雄 {hero}")
                         return
                         
+            # 5. 最后检查特殊卡"细胞组织"
+            for i, card in enumerate(matches):
+                if card['hero'] == "细胞组织":
+                    self.logger.info("找到特殊卡牌: 细胞组织")
+                    pyautogui.moveTo(card['center_x'], card['center_y'], duration=0.03)
+                    time.sleep(0.02)  # 减少点击前等待时间
+                    pyautogui.click()
+                    self.logger.info("已点击特殊卡牌")
+                    return
+                    
             # 6. 没有匹配则刷新
             if self.current_d_count >= self.max_d_count:
                 self.logger.info(f"已达到最大D牌次数 {self.max_d_count}，停止操作")
                 self.stop_picking()
+                self.should_exit = True  # 确保线程停止
                 return
                 
             self.current_d_count += 1
             remaining = self.max_d_count - self.current_d_count
             self.logger.info(f"未找到目标英雄，触发D键刷新... (已D {self.current_d_count}次，剩余 {remaining}次)")
             self.logger.debug("开始模拟按下D键")
-            keyboard.press('d')
-            time.sleep(0.02)
-            keyboard.release('d') 
-            self.logger.debug("已释放D键")
-            time.sleep(0.1)
+            # 确保窗口激活
+            try:
+                mumu_window = gw.getWindowsWithTitle("MuMu模拟器12")[0]
+                mumu_window.activate()
+                time.sleep(0.1)
+            except:
+                pass
+                
+            # 更可靠的按键方式
+            keyboard.press_and_release('d')
+            self.logger.debug("已触发D键")
+            time.sleep(0.3)  # 增加延迟确保D牌完成
         except Exception as e:
             self.logger.error(f"操作出错: {str(e)}", exc_info=True)
 
