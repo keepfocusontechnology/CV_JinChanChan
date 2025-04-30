@@ -31,7 +31,7 @@ class AutoPicker:
         self.log_analyzer = LogAnalyzer()
         self.should_exit = False
         self.target_heroes = []  # 初始为空，由GUI界面设置
-        self.max_d_count = 20    # 默认D牌次数
+        self.max_d_count = 10    # 默认D牌次数
         self.current_d_count = 0 # 当前已D次数
         
         # 初始化硬件加速器
@@ -84,27 +84,38 @@ class AutoPicker:
         self._run_loop()
 
     def stop_picking(self):
+        """通过标志位停止D牌操作"""
         self.should_exit = True
         self.running_flag = False
-        try:
-            # 强制终止所有键盘操作
-            keyboard.unhook_all()
-            # 确保所有按键被释放
-            keyboard.release('d')
-            # 重置D牌计数
-            self.current_d_count = 0
-            self.logger.info("已强制停止D牌操作")
-        except Exception as e:
-            self.logger.error(f"停止时出错: {str(e)}")
-        finally:
-            # 确保状态被重置
-            self.should_exit = True
-            self.running_flag = False
+        self.logger.info("已设置停止标志位")
 
     def _run_loop(self):
-        while self.running_flag and not self.should_exit:
-            self.main_loop()
-            time.sleep(0.1)
+        """主循环线程 - 完全由标志位控制"""
+        try:
+            while self.running_flag and not self.should_exit:
+                # 更频繁地检查停止标志
+                if self.should_exit:
+                    break
+                    
+                self.main_loop()
+                
+                # 更短的睡眠时间以便更快响应停止
+                for _ in range(10):
+                    if self.should_exit:
+                        break
+                    time.sleep(0.01)
+                    
+        except Exception as e:
+            self.logger.error(f"线程异常: {str(e)}", exc_info=True)
+        finally:
+            # 确保释放键盘资源
+            try:
+                keyboard.unhook_all()
+                keyboard.release('d')
+            except:
+                pass
+            self.running_flag = False
+            self.logger.debug("线程已完全退出")
 
     def on_f3(self):
         self.logger.info("开始执行")

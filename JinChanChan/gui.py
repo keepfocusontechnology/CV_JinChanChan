@@ -291,66 +291,45 @@ class AutoPickerGUI:
             self.picker.running_flag = True
             self.picker.should_exit = False
             
-            while not self.stop_event.is_set():
+            while not self.stop_event.is_set() and not self.picker.should_exit:
                 # 每次循环检查是否还有选中英雄
                 if not self.picker.target_heroes:
                     logging.warning("已清空所有英雄，停止D牌")
                     break
                     
                 self.picker.main_loop()
-                time.sleep(0.1)  # 避免CPU占用过高
+                
+                # 更频繁地检查停止标志
+                for _ in range(10):
+                    if self.stop_event.is_set() or self.picker.should_exit:
+                        break
+                    time.sleep(0.01)
                 
         except Exception as e:
             logging.error(f"D牌失败: {str(e)}", exc_info=True)
         finally:
             self.picker.running_flag = False
             self.picker.should_exit = True
-            self.stop_event.set()  # 确保停止标志被设置
+            logging.debug("D牌线程已完全退出")
 
     def stop_test(self):
+        """通过标志位停止D牌线程"""
         if not self.picker_thread or not self.picker_thread.is_alive():
             logging.warning("没有正在运行的D牌线程")
             return
             
         try:
-            # 设置停止标志
-            self.stop_event.set()
+            # 设置停止标志位
             self.picker.should_exit = True
             self.picker.running_flag = False
-            
-            # 停止picker操作
             self.picker.stop_picking()
             
-            # 重置当前D牌计数
+            # 重置状态
             self.picker.current_d_count = 0
+            logging.info("已设置停止标志位，等待线程自然退出")
             
-            # 尝试正常停止线程
-            self.picker_thread.join(timeout=1.0)
-            
-            if self.picker_thread.is_alive():
-                logging.warning("线程未正常终止，尝试强制结束...")
-                # 确保所有键盘操作被释放
-                try:
-                    keyboard.unhook_all()
-                    keyboard.release('d')
-                except:
-                    pass
-                
-                # 创建新线程来监控并强制终止
-                def force_stop():
-                    time.sleep(1)
-                    if self.picker_thread.is_alive():
-                        logging.error("无法正常停止线程，程序可能需要重启")
-                
-                threading.Thread(target=force_stop, daemon=True).start()
-            else:
-                logging.info("D牌线程已安全停止")
-                
         except Exception as e:
             logging.error(f"停止失败: {str(e)}", exc_info=True)
-            # 无论如何都尝试重置状态
-            self.picker.should_exit = True
-            self.picker.running_flag = False
 
     def restore_mumu_window(self):
         """恢复MuMu窗口位置和大小"""
