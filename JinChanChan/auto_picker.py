@@ -1,5 +1,4 @@
-import dxcam
-import os
+
 import numpy as np
 import pyautogui
 import pygetwindow as gw
@@ -24,6 +23,8 @@ logging.basicConfig(
         logging.FileHandler('auto_picker.log')
     ]
 )
+# 禁用 Pillow 的调试日志
+logging.getLogger("PIL").setLevel(logging.WARNING)
 class AutoPicker:
     def __init__(self):
         setup_unified_logging()

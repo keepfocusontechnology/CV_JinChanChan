@@ -1,6 +1,12 @@
-# Python compiled files
-*.pyc
-__pycache__/
+# 忽略日志文件
+*.log
 
-# Split cards directory
-JinChanChan/split_cards/
+# 忽略缓存文件夹
+cache/
+
+# 忽略截图相关的图片文件夹
+screenshots/
+spilt_cards/
+__pycache__/
+.idea/
+*.pyc

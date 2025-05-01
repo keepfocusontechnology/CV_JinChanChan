@@ -55,6 +55,21 @@ class AutoPickerGUI:
                 font=('微软雅黑', 10)
             )
             hero_text.pack(side='left', fill='x', expand=True)
+
+            # 添加全选复选框
+            select_all_var = tk.BooleanVar(value=False)
+            
+            # 创建复选框
+            select_all_cb = tk.Checkbutton(
+                row_frame,
+                text="全选",
+                variable=select_all_var,
+                onvalue=True,
+                offvalue=False,
+                command=lambda c=cost, v=select_all_var: self._toggle_select_all(c, v),
+                font=('微软雅黑', 10)
+            )
+            select_all_cb.pack(side='right', padx=5)
             
             # 添加该费用的英雄复选框
             for hero in self.hero_mapper.get_heroes_by_cost(cost):
@@ -75,7 +90,7 @@ class AutoPickerGUI:
                     bg='white',
                     activebackground='white'
                 )
-                # 使用window_create将复选框插入文本区域
+                # 使用 window_create 将复选框插入文本区域
                 hero_text.window_create(tk.END, window=cb)
                 hero_text.insert(tk.END, " ")  # 添加空格分隔
         
@@ -212,6 +227,12 @@ class AutoPickerGUI:
         # 日志配置
         self.setup_logging()
 
+    def _toggle_select_all(self, cost, var):
+        """全选/取消全选指定费用的英雄"""
+        for hero in self.hero_mapper.get_heroes_by_cost(cost):
+            self.hero_vars[hero].set(var.get())
+        self.update_selected_heroes_display()
+
     def update_selected_heroes_display(self):
         """更新已选英雄显示"""
         # 获取已选英雄
@@ -257,6 +278,7 @@ class AutoPickerGUI:
             logging.warning("D牌线程已在运行中")
             return
             
+         
         # 检查是否有选中英雄
         if not self.picker.target_heroes:
             logging.warning("未选中任何英雄，请先选择目标英雄")
@@ -279,6 +301,8 @@ class AutoPickerGUI:
             daemon=True
         )
         self.picker_thread.start()
+        # 禁用开始按钮
+        self.start_btn.config(state=tk.DISABLED)   
         logging.info(f"D牌线程已启动，目标英雄: {', '.join(self.picker.target_heroes)}，最大D牌次数: {self.picker.max_d_count}")
 
     def _run_picker(self):
@@ -311,6 +335,8 @@ class AutoPickerGUI:
             self.picker.running_flag = False
             self.picker.should_exit = True
             logging.debug("D牌线程已完全退出")
+             # 恢复开始按钮
+            self.start_btn.config(state=tk.NORMAL)
 
     def stop_test(self):
         """通过标志位停止D牌线程"""
