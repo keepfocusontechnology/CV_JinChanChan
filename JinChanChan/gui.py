@@ -110,7 +110,7 @@ class AutoPickerGUI:
         special_text.pack(side='left', fill='x', expand=True)
         
         for hero in self.hero_mapper.get_heroes_by_cost("特殊卡"):
-            var = tk.BooleanVar(value=False)
+            var = tk.BooleanVar(value=True)  # 特殊卡默认选中
             self.hero_vars[hero] = var
             cb = tk.Checkbutton(
                 special_text,
@@ -259,6 +259,11 @@ class AutoPickerGUI:
         self.update_selected_heroes_display()
 
     def setup_logging(self):
+        # 配置日志格式
+        log_format = '%(asctime)s - %(levelname)s - %(message)s'
+        formatter = logging.Formatter(log_format)
+        
+        # 文本控件日志处理器
         class TextHandler(logging.Handler):
             def __init__(self, text_widget):
                 super().__init__()
@@ -269,9 +274,25 @@ class AutoPickerGUI:
                 self.text_widget.insert(tk.END, msg + '\n')
                 self.text_widget.see(tk.END)
 
+        # 创建并配置文本日志处理器
         self.log_text_handler = TextHandler(self.log_text)
-        self.log_text_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
-        logging.getLogger().addHandler(self.log_text_handler)
+        self.log_text_handler.setFormatter(formatter)
+        
+        # 创建文件日志处理器
+        from logging.handlers import RotatingFileHandler
+        file_handler = RotatingFileHandler(
+            'auto_picker.log',
+            maxBytes=1024*1024,  # 1MB
+            backupCount=3,
+            encoding='utf-8'
+        )
+        file_handler.setFormatter(formatter)
+        
+        # 配置根日志记录器
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        logger.addHandler(self.log_text_handler)
+        logger.addHandler(file_handler)
 
     def start_test(self):
         if self.picker_thread and self.picker_thread.is_alive():
@@ -279,10 +300,18 @@ class AutoPickerGUI:
             return
             
          
-        # 检查是否有选中英雄
-        if not self.picker.target_heroes:
-            logging.warning("未选中任何英雄，请先选择目标英雄")
+        # 检查是否有选中1-5费英雄
+        normal_heroes = [h for h in self.picker.target_heroes 
+                        if h not in self.hero_mapper.get_heroes_by_cost("特殊卡")]
+        if not normal_heroes:
+            logging.warning("必须至少选择1个1-5费的英雄才能开启D牌")
             return
+            
+        # 特殊卡默认选中但不算作开启条件
+        special_cards = [h for h in self.picker.target_heroes 
+                        if h in self.hero_mapper.get_heroes_by_cost("特殊卡")]
+        if special_cards:
+            logging.info(f"已自动选中特殊卡: {', '.join(special_cards)}")
             
         try:
             # 获取D牌次数
