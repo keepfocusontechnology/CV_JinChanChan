@@ -39,7 +39,7 @@ class AutoPicker:
         
         # 初始化硬件加速器
         try:
-            self.matcher = FeatureMatcher(device='cuda')
+            self.matcher = FeatureMatcher(device='cpu')
             self.logger.info("CUDA加速器初始化成功")
         except Exception as e:
             self.logger.warning(f"CUDA不可用，已切换CPU模式: {str(e)}")

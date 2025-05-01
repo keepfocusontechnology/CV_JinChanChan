@@ -8,7 +8,7 @@ from utils import load_imgs
 from config import Config
 
 class FeatureMatcher:
-    def __init__(self,device='cuda'):
+    def __init__(self,device='cpu'):
         # 使用ResNet-18作为特征提取器
         self.model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
         self.model = torch.nn.Sequential(*list(self.model.children())[:-1])  # 移除最后一层

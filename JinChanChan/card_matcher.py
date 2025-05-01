@@ -7,7 +7,7 @@ from config import Config
 class CardMatcher:
     def __init__(self):
         self.card_dir = "JinChanChan/split_cards"
-        self.matcher = FeatureMatcher(device='cuda')
+        self.matcher = FeatureMatcher(device='cpu')
         # 预加载特征库
         self.img_features = {}
         img_dict = load_imgs(Config.pictrue_dir)
