@@ -12,7 +12,7 @@ class AutoPickerGUI:
         self.stop_event = threading.Event()
         self.root = tk.Tk()
         self.root.title("金铲铲自动选牌")
-        self.root.geometry("600x800")
+        self.root.geometry("650x800")
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
         # 主布局
@@ -49,10 +49,10 @@ class AutoPickerGUI:
             # 创建自动换行的英雄选择文本区域
             hero_text = tk.Text(
                 row_frame,
-                height=4,
+                height=4.1,
                 width=50,
                 wrap=tk.WORD,
-                font=('微软雅黑', 10)
+                font=('微软雅黑', 12)
             )
             hero_text.pack(side='left', fill='x', expand=True)
 
