@@ -6,7 +6,8 @@ cache/
 
 # 忽略截图相关的图片文件夹
 screenshots/
-spilt_cards/
+split_cards/
+JinChanChan/mumu截屏/
 __pycache__/
 .idea/
 *.pyc
